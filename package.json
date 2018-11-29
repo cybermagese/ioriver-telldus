@@ -1,0 +1,30 @@
+{
+  "name": "ioriver-telldus",
+  "version": "0.1.0",
+  "description": "Ioriver plugin for Telldus Local API ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cybermagese/ioriver-telldus.git"
+  },
+  "engines": {
+    "ioriver": ">=0.1.3",
+    "node": ">=8" 
+  },
+  "keywords": [
+    "ioriver","telldus"
+  ],
+  "author": "Ove Jansson <ove@cybermage.se>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cybermagese/ioriver-telldus/issues"
+  },
+  "homepage": "https://github.com/cybermagese/ioriver-telldus#readme",
+  "dependencies": {
+    "ioriver": "^0.1.0",
+    "telldus-api": "^1.0.1" 
+  }
+}
