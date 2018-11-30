@@ -39,7 +39,9 @@ class IORiverTelldus {
         let accessToken = this.config.access_token;
 
         this.api = await new LocalApi({ host, accessToken });
-        this.log.info(`ioriver`)
+        this.log.debug(`LocalApi is loaded`);
+
+        this.getList();
         
     }
 
