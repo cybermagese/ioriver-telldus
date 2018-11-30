@@ -1,13 +1,12 @@
 'use strict';
 
-//const { LocalApi, LiveApi } = require('telldus-api');
+const { LocalApi } = require('telldus-api');
 
 /**
  * @name ioriver-telldus
  * @description ioriver plugin for Telldus local api
  * @returns this module returns a class instance on IORiverTelldus. Call init(), run(), shutdown() to setup, run and stop 
  * @author Ove Jansson <ove@cybermage.se>
- * @version 0.1.1
  */
 
 class IORiverTelldus {
@@ -30,16 +29,16 @@ class IORiverTelldus {
         this._api = ultrabridge_api;
 
         this.log.debug(`Init IORiverTelldus with config=`);
-        this.log.debug(platformconfig);
+        this.log.debug(this.config);
 
-        if(!this.config.ip || !this.config.accessToken) {
-            this.log.error("No config for Telldus! please include \"ip\"=\"<TELLSTICK_IP_ADDRESS>\" and \"accessToken\"=\"<TELLSTICK_LOCAL_API_SECRET>\" under platforms in config.json");
+        if(!this.config.ip || !this.config.access_token) {
+            this.log.error("No config for Telldus! please include \"ip\"=\"<TELLSTICK_IP_ADDRESS>\" and \"access_token\"=\"<TELLSTICK_LOCAL_API_SECRET>\" under platforms in config.json");
             return false;
         }
         let host = this.config.ip;
-        let accessToken = this.config.accessToken;
+        let accessToken = this.config.access_token;
 
-        //this.api = await new LocalApi({ host, accessToken });
+        this.api = new LocalApi({ host, accessToken });
         
     }
 }
