@@ -66,7 +66,7 @@ class IORiverTelldus {
         this.log.debug('Sensor/List = ');
         this.log.debug(this.sensors);
 
-        for(var i=0; i < this.sensors.length; i++) {
+        for(let i=0; i < this.sensors.length; i++) {
             if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
                 this.sensors[i]._ignore = this.config.ignore_id_list.includes(this.sensors[i].id);
             }
@@ -74,11 +74,21 @@ class IORiverTelldus {
             this.log.debug(this.sensors[i].info);
             //todo:handle errors
         }
-        
+
 
         this.devices = await this.api.listDevices();
         this.log.debug('Device/List = ');
         this.log.debug(this.devices);
+
+        for(let i=0; i<this.devices.length; i++) {
+            if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
+                this.devices[i]._ignore = this.config.ignore_id_list.includes(this.devices[i].id);
+            }
+            this.devices[i].info = await this.api.getDeviceInfo(this.devices[i].id);
+            this.log.debug(this.devices[i].info);
+            //todo:handle errors
+
+        }
 
 
     }
