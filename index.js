@@ -12,21 +12,35 @@ const { LocalApi } = require('telldus-api');
 class IORiverTelldus {
     
     constructor() {
+        this.sensors = {};
+        this.devices = {};
         this.list = {};
         this.listTimeStamp = 0;
+        this.methods = {
+            on: 0x0001, // 1
+            off: 0x0002, // 2
+            bell: 0x0004, // 4
+            toggle: 0x0008, // 8
+            dim: 0x0010, // 16
+            learn: 0x0020, // 32
+            execute: 0x0040, // 64
+            up: 0x0080, // 128
+            down: 0x0100, // 256
+            stop: 0x0200, // 512
+          };
     }
 
     /**
      * @method init
      * @description set up the plugin
-     * @param {*} platformconfig 
-     * @param {*} ultrabridge_api 
-     * @param {*} log 
+     * @param {*} platformconfig this platform config in ioriver's config.json
+     * @param {*} ioriver_api ioriver's api for plugins
+     * @param {*} log general logging
      */
-    async  init(platformconfig,ultrabridge_api,log) {
+    async  init(platformconfig, ioriver_api, log) {
         this.config = platformconfig;
         this.log = log;
-        this._api = ultrabridge_api;
+        this._api = ioriver_api;
 
         this.log.debug(`Init IORiverTelldus with config=`);
         this.log.debug(this.config);
@@ -41,14 +55,32 @@ class IORiverTelldus {
         this.api = await new LocalApi({ host, accessToken });
         this.log.debug(`LocalApi is loaded`);
 
+        //get all the devices
         this.getList();
         
+        //todo: registerPlatform when we are done
     }
 
     async getList() {
-        //get sensors
-        var sensors = await this.api.getSensors();
-        this.log.debug(sensors);
+        this.sensors = await this.api.listSensors();
+        this.log.debug('Sensor/List = ');
+        this.log.debug(this.sensors);
+
+        for(var i=0; i < this.sensors.length; i++) {
+            if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
+                this.sensors[i]._ignore = this.config.ignore_id_list.includes(this.sensors[i].id);
+            }
+            this.sensors[i].info = await this.api.getSensorInfo(this.sensors[i].id);
+            this.log.debug(this.sensors[i].info);
+            //todo:handle errors
+        }
+        
+
+        this.devices = await this.api.listDevices();
+        this.log.debug('Device/List = ');
+        this.log.debug(this.devices);
+
+
     }
 }
 
