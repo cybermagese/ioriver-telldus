@@ -38,8 +38,15 @@ class IORiverTelldus {
         let host = this.config.ip;
         let accessToken = this.config.access_token;
 
-        this.api = new LocalApi({ host, accessToken });
+        this.api = await new LocalApi({ host, accessToken });
+        this.log.info(`ioriver`)
         
+    }
+
+    async getList() {
+        //get sensors
+        var sensors = await this.api.getSensors();
+        this.log.debug(sensors);
     }
 }
 
