@@ -57,7 +57,7 @@ class IORiverTelldus {
         this.log.debug(`LocalApi is loaded`);
 
         //get system
-        this.system = await this.request({ path: '/system/info' });
+        this.system = await this.api.request({ path: '/system/info' });
         this.log.debug('System/Info = ');
         this.log.debug(this.system);
 
