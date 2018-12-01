@@ -12,6 +12,7 @@ const { LocalApi } = require('telldus-api');
 class IORiverTelldus {
     
     constructor() {
+        this.system = {};
         this.sensors = {};
         this.devices = {};
         this.list = {};
@@ -54,6 +55,11 @@ class IORiverTelldus {
 
         this.api = await new LocalApi({ host, accessToken });
         this.log.debug(`LocalApi is loaded`);
+
+        //get system
+        this.system = await this.request({ path: '/system/info' });
+        this.log.debug('System/Info = ');
+        this.log.debug(this.system);
 
         //get all the devices
         this.getList();
