@@ -1,6 +1,6 @@
 {
   "name": "ioriver-telldus",
-  "version": "0.1.12",
+  "version": "0.1.15",
   "description": "Ioriver plugin for Telldus Local API ",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "node": ">=8" 
   },
   "keywords": [
-    "ioriver","telldus"
+    "ioriver","telldus","iot"
   ],
   "author": "Ove Jansson <ove@cybermage.se>",
   "license": "ISC",
