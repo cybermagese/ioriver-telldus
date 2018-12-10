@@ -132,16 +132,21 @@ class IORiverTelldus {
             if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
                 this.sensors[i]._ignore = this.config.ignore_id_list.includes(this.sensors[i].id);
             }
-            let thisSensor = await this.api.getSensorInfo(this.sensors[i].id);
-            this.sensors[i].info = thisSensor;
+            if(!this.sensors[i].name) {
+                this.sensors[i]._ignore = true;
+            }
+            var thisSensor = await this.api.getSensorInfo(this.sensors[i].id);
+            this.sensors[i].info = await thisSensor;
             
             //if it doesn't exist create it
-            if(!this.sensors[i]._ignore && !this.list[thisSensor.id+this.baseSn]) {
-                this.log.debug(`Creating sensor ${thisSensor.id+this.baseSn}`);
-                var item = this.makeSensor(this.sensors[i]);
-                this.list[item.Sn] = item;
+            if(!this.sensors[i]._ignore && !this.list[thisSensor.id + this.baseSn]) {
+                this.log.debug(`Making sensor ${thisSensor.id + this.baseSn}`);
+                var item = await this.makeSensor(this.sensors[i]);
+                this.list[item.Sn] = await item;
                 
                 this._api.registerDevice(item, this);
+            } else {
+                this.log.debug(`Not registering sensor id = ${this.sensors[i].id}`);
             }
             
             this.log.debug(this.sensors[i].info);
@@ -156,14 +161,17 @@ class IORiverTelldus {
             if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
                 this.devices[i]._ignore = this.config.ignore_id_list.includes(this.devices[i].id);
             }
-            let thisDevice = await this.api.getDeviceInfo(this.devices[i].id);
-            this.devices[i].info = thisDevice;
+            if(!this.devices[i].name) { //remove ignored devices
+                this.devices[i],_ignore =true;
+            }
+            var thisDevice = await this.api.getDeviceInfo(this.devices[i].id);
+            this.devices[i].info = await thisDevice;
 
             //if it doesn't exist create it
             if(!this.devices[i]._ignore && !this.list[thisDevice.id + this.baseSn]) {
-                this.log.debug(`Creating device ${thisDevice.id + this.baseSn}.`);
-                var item = this.makeDevice(this.devices[i]);
-                this.list[item.Sn] = item;
+                this.log.debug(`Creating device ${thisDevice.name} ${thisDevice.id + this.baseSn}.`);
+                var item = await this.makeDevice(this.devices[i]);
+                this.list[item.Sn] = await item;
                 this._api.registerDevice(item,this);
             }
             
@@ -213,6 +221,8 @@ class IORiverTelldus {
     }
 
     async makeSensor(data) {
+        this.log.debug(`makeSensor(data)=`);
+        this.log.debug(data);
         var proto = {};
         proto.type = "sensor";
         proto.Sn = this.baseSn + data.id;
@@ -239,6 +249,7 @@ class IORiverTelldus {
             }
         }
 
+        
         return proto;
     }
 }
