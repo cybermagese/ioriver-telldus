@@ -17,6 +17,7 @@ class IORiverTelldus {
         this.devices = {};
         this.list = {};
         this.listTimeStamp = 0;
+        this.loaded = false;
 
         this.supported_products = {"tellstick-znet-lite-v2":"^1.1.1"};
 
@@ -81,6 +82,7 @@ class IORiverTelldus {
         this.config = platformconfig;
         this.log = log;
         this._api = ioriver_api;
+        
 
         this.log.debug(`Init IORiverTelldus with config=`);
         this.log.debug(this.config);
@@ -108,9 +110,11 @@ class IORiverTelldus {
         }
 
         //get all the devices
-        this.getList();
+        await this.getList();
         
         //todo: registerPlatform when we are done
+        this._api.registerPlatform(this);
+        this.loaded = true;
     }
 
     
