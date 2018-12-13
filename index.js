@@ -112,7 +112,7 @@ class IORiverTelldus {
         //get all the devices
         await this.getList();
         
-        //todo: registerPlatform when we are done
+        //registerPlatform when we are done
         this._api.registerPlatform(this);
         this.loaded = true;
     }
