@@ -1,3 +1,4 @@
+
 'use strict';
 
 const { LocalApi } = require('telldus-api');
@@ -5,20 +6,18 @@ const { LocalApi } = require('telldus-api');
 /**
  * @name ioriver-telldus
  * @description ioriver plugin for Telldus local api
- * @returns this module returns a class instance on IORiverTelldus. Call init(), run(), shutdown() to setup, run and stop 
+ * @returns this module returns a class instance on IORiverTelldus. 
+ * init() to setup devices, 
+ * run() to update devices, 
+ * shutdown() stop 
  * @author Ove Jansson <ove@cybermage.se>
  */
-
 class IORiverTelldus {
     
     constructor() {
         this.system = {};
         this.sensors = {};
-        this.devices = {};
-        this.list = {};
-        this.listTimeStamp = 0;
-        this.loaded = false;
-
+        
         this.supported_products = {"tellstick-znet-lite-v2":"^1.1.1"};
 
         this.types = { // here for future use these are only for Live! at the moment
@@ -63,7 +62,7 @@ class IORiverTelldus {
             "humidity": "%",
             "wdir": "°",
             "dewp": "°C",
-            "barpres": "kPa",
+            "barpress": "kPa",
             "wgust": "m/s",
             "wavg": "m/s"
         }
@@ -75,8 +74,8 @@ class IORiverTelldus {
      * @method init
      * @description set up the plugin
      * @param {*} platformconfig this platform config in ioriver's config.json
-     * @param {*} ioriver_api ioriver's api for plugins
-     * @param {*} log general logging
+     * @param {*} ioriver_api ioriver's api/event emitter for plugins
+     * @param {*} log general logging from server
      */
     async  init(platformconfig, ioriver_api, log) {
         this.config = platformconfig;
@@ -84,7 +83,7 @@ class IORiverTelldus {
         this._api = ioriver_api;
         
 
-        this.log.debug(`Init IORiverTelldus with config=`);
+        this.log.debug(`Init ioiver-telldus with config=`);
         this.log.debug(this.config);
 
         this.baseSn = (this.config.sn_x1000 * 1000) + this._api.baseSn;
@@ -110,12 +109,18 @@ class IORiverTelldus {
         }
 
         //get all the devices
-        await this.getList();
+        await this.setupDevices();
         
         //registerPlatform when we are done
-        this._api.registerPlatform(this);
-        this.loaded = true;
+        this._api.emit('registerPlatform', this);
     }
+
+    async run() {
+        this.log.debug('*** Running ioriver-telldus');
+        await this.setupDevices();
+        this.log.debug('*** End ioriver-telldus');
+    }
+
 
     
 
@@ -127,65 +132,61 @@ class IORiverTelldus {
         return id;
     }
 
-    async getList() {
-        this.sensors = await this.api.listSensors();
+    async setupDevices() {
+        var sensors = await this.api.listSensors();
         this.log.debug('Sensor/List = ');
-        this.log.debug(this.sensors);
+        this.log.debug(sensors);
 
-        for(let i=0; i < this.sensors.length; i++) {
+        for(let i=0; i < sensors.length; i++) {
             if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
-                this.sensors[i]._ignore = this.config.ignore_id_list.includes(this.sensors[i].id);
+                sensors[i]._ignore = this.config.ignore_id_list.includes(sensors[i].id);
             }
-            if(!this.sensors[i].name) {
-                this.sensors[i]._ignore = true;
+            if(!sensors[i].name) {
+                sensors[i]._ignore = true;
             }
-            var thisSensor = await this.api.getSensorInfo(this.sensors[i].id);
-            this.sensors[i].info = await thisSensor;
-            
-            //if it doesn't exist create it
-            if(!this.sensors[i]._ignore && !this.list[thisSensor.id + this.baseSn]) {
+            var thisSensor = await this.api.getSensorInfo(sensors[i].id);
+            sensors[i].info = await thisSensor;
+
+            if(!sensors[i]._ignore) {
                 this.log.debug(`Making sensor ${thisSensor.id + this.baseSn}`);
-                var item = await this.makeSensor(this.sensors[i]);
-                this.list[item.Sn] = await item;
-                
-                this._api.registerDevice(item, this);
+                var item = await this.makeSensor(sensors[i]);
+                this._api.i = 'ioriver-telldus'
+                this._api.emit('registerDevice', item);
             } else {
-                this.log.debug(`Not registering sensor id = ${this.sensors[i].id}`);
+                this.log.debug(`Ignoring sensor id = ${sensors[i].id}`);
             }
             
-            this.log.debug(this.sensors[i].info);
-            //todo:handle errors
         }
 
-        this.devices = await this.api.listDevices();
+        var devices = await this.api.listDevices();
         this.log.debug('Device/List = ');
-        this.log.debug(this.devices);
+        this.log.debug(devices);
 
-        for(let i=0; i<this.devices.length; i++) {
+        for(let i=0; i<devices.length; i++) {
             if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
-                this.devices[i]._ignore = this.config.ignore_id_list.includes(this.devices[i].id);
+                this.log.debug(`checking ignore list`);
+                devices[i]._ignore = this.config.ignore_id_list.includes(devices[i].id);
             }
-            if(!this.devices[i].name) { //remove ignored devices
-                this.devices[i],_ignore =true;
+            if(!devices[i].name) { //remove ignored devices
+                devices[i]._ignore =true;
             }
-            var thisDevice = await this.api.getDeviceInfo(this.devices[i].id);
-            this.devices[i].info = await thisDevice;
+            var thisDevice = await this.api.getDeviceInfo(devices[i].id);
+            this.log.debug(thisDevice);
+            devices[i].info = thisDevice;
 
-            //if it doesn't exist create it
-            if(!this.devices[i]._ignore && !this.list[thisDevice.id + this.baseSn]) {
-                this.log.debug(`Creating device ${thisDevice.name} ${thisDevice.id + this.baseSn}.`);
-                var item = await this.makeDevice(this.devices[i]);
-                this.list[item.Sn] = await item;
-                this._api.registerDevice(item,this);
+            if(!devices[i]._ignore) {
+                this.log.debug(`Creating device object for ${thisDevice.name} ${thisDevice.id + this.baseSn}.`);
+                var item = await this.makeDevice(devices[i]);
+                this._api.emit('registerDevice',item);
             }
             
-            this.log.debug(this.devices[i].info);
-            //todo:handle errors
         }
 
 
 
     }
+
+    
 
     async makeDevice(data) {
         var proto = {};
@@ -194,7 +195,7 @@ class IORiverTelldus {
         proto.name = data.name;
 
         if(data.battery) {
-            proto.battery = data.battery/255; //convert to %
+            proto.battery = data.battery/2.55; //convert to %
         }
 
         proto.methods = {
@@ -209,7 +210,7 @@ class IORiverTelldus {
         }
 
         proto.state = this.getMethod(data.state);
-        proto.value = data.info.statevalue/255;
+        proto.value = Math.round(data.info.statevalue/255*100);
 
         return proto;
 
@@ -233,7 +234,7 @@ class IORiverTelldus {
         proto.name = data.name;
 
         if(data.battery) {
-            proto.battery = data.battery/255; //convert to %
+            proto.battery = data.battery/2.55; //convert to %
         }
 
         proto.inputs = [];
@@ -255,6 +256,25 @@ class IORiverTelldus {
 
         
         return proto;
+    }
+    
+    serial2Id(serial) {
+        var baseSn = Math.floor(serial/1000)*1000;
+        return serial-baseSn;
+    }
+
+    async setDim(serial,value) {
+        var byte = Math.round(value/100*255)
+        if(value > 255) value = 255;
+        if(value < 0) value=0;
+        this.log.debug(`Telldus: set dimmer to ${byte}`);
+        await this.api.dimDevice(this.serial2Id(serial),byte);
+    }
+
+    async setOnOff(serial, value) {
+        var on = false;
+        if(value===1) on = true;
+        await this.api.onOffDevice(this.serial2Id(serial),on);
     }
 }
 
