@@ -64,7 +64,11 @@ class IORiverTelldus {
             "dewp": "°C",
             "barpress": "kPa",
             "wgust": "m/s",
-            "wavg": "m/s"
+            "wavg": "m/s",
+            "power": "W",
+            "energy": "kWh",
+            "current": "A",
+            "voltage": "V"
         }
     }
 
@@ -82,6 +86,7 @@ class IORiverTelldus {
         this.log = log;
         this._api = ioriver_api;
         
+        //todo:checkplugin against ioriver versions
 
         this.log.debug(`Init ioiver-telldus with config=`);
         this.log.debug(this.config);
@@ -99,7 +104,12 @@ class IORiverTelldus {
         this.log.debug(`LocalApi is loaded`);
 
         //get system
-        this.system = await this.api.request({ path: '/system/info' });
+        var log = this.log;
+        
+        this.system = await this.api.request({ path: '/system/info' })
+        .catch((e)=>{
+            log.warn(`ioriver-telldus: Failed to contact controller`);
+        });;
         this.log.debug('System/Info = ');
         this.log.debug(this.system);
         if(!this.system.product && !this.supported_products[this.system.product]){
@@ -118,7 +128,7 @@ class IORiverTelldus {
     async run() {
         this.log.debug('*** Running ioriver-telldus');
         await this.setupDevices();
-        this.log.debug('*** End ioriver-telldus');
+        this.log.debug('*** End ioriver-telldus run');
     }
 
 
@@ -133,53 +143,77 @@ class IORiverTelldus {
     }
 
     async setupDevices() {
-        var sensors = await this.api.listSensors();
-        this.log.debug('Sensor/List = ');
-        this.log.debug(sensors);
+        var log = this.log;
+        var sensors = await this.api.listSensors().catch((e)=>{ log.warn(`ioriver-telldus: Failed listSensors()`);});
+        if(typeof sensors === undefined) {
+            this.log.warn(`ioriver-telldus: Undefined sensor list!`);
+        } else {
+            this.log.debug('Sensor/List = ');
+            this.log.debug(sensors);
 
-        for(let i=0; i < sensors.length; i++) {
-            if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
-                sensors[i]._ignore = this.config.ignore_id_list.includes(sensors[i].id);
-            }
-            if(!sensors[i].name) {
-                sensors[i]._ignore = true;
-            }
-            var thisSensor = await this.api.getSensorInfo(sensors[i].id);
-            sensors[i].info = await thisSensor;
+            for(let i=0; i < sensors.length; i++) {
+                if(typeof sensors[i] === undefined) {
+                    this.log.warn(`ioriver-telldus: Undefined sensor ${i}!`);
+                } else{
+                    if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
+                        sensors[i]._ignore = this.config.ignore_id_list.includes(sensors[i].id);
+                    }
+                    if(!sensors[i].name) {
+                        sensors[i]._ignore = true;
+                    }
+                    var thisSensor = await this.api.getSensorInfo(sensors[i].id).catch((e)=>{ log.warn(`ioriver-telldus: failed getSensorInfo(${sensors[i].id})`);});
+                    if(typeof thisSensor === undefined) {
+                        this.log.warn(`ioriver-telldus: Undefined sensor info id ${sensors[i].id}!`);
+                    } else {
+                        sensors[i].info = thisSensor;
 
-            if(!sensors[i]._ignore) {
-                this.log.debug(`Making sensor ${thisSensor.id + this.baseSn}`);
-                var item = await this.makeSensor(sensors[i]);
-                this._api.i = 'ioriver-telldus'
-                this._api.emit('registerDevice', item);
-            } else {
-                this.log.debug(`Ignoring sensor id = ${sensors[i].id}`);
-            }
+                        if(!sensors[i]._ignore) {
+                            this.log.debug(`Making sensor ${await thisSensor.id + this.baseSn}`);
+                            var item = await this.makeSensor(sensors[i]);
+                            this._api.i = 'ioriver-telldus'
+                            this._api.emit('registerDevice', item);
+                        } else {
+                            this.log.debug(`Ignoring sensor id = ${sensors[i].id}`);
+                        }
+                    }
+                }
             
+            }
         }
 
-        var devices = await this.api.listDevices();
-        this.log.debug('Device/List = ');
-        this.log.debug(devices);
+        var devices = await this.api.listDevices().catch((e)=>{  log.warn(`ioriver-telldus: failed listDevices()`);});
+        if(typeof devices===undefined) {
+            this.log.warn(`ioriver-telldus: undefined device`);
+        } else {
+            this.log.debug('Device/List = ');
+            this.log.debug(devices);
 
-        for(let i=0; i<devices.length; i++) {
-            if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
-                this.log.debug(`checking ignore list`);
-                devices[i]._ignore = this.config.ignore_id_list.includes(devices[i].id);
-            }
-            if(!devices[i].name) { //remove ignored devices
-                devices[i]._ignore =true;
-            }
-            var thisDevice = await this.api.getDeviceInfo(devices[i].id);
-            this.log.debug(thisDevice);
-            devices[i].info = thisDevice;
+            for(let i=0; i<devices.length; i++) {
+                if(typeof !devices[i] === undefined) {
+                    this.log.warn(`ioriver-telldus: undefined device ${i}`);
+                } else {
+                    if(typeof this.config.ignore_id_list !== 'undefined' && Array.isArray(this.config.ignore_id_list)) {
+                        this.log.debug(`checking ignore list`);
+                        devices[i]._ignore = this.config.ignore_id_list.includes(devices[i].id);
+                    }
+                    if(!devices[i].name) { //remove ignored devices
+                        devices[i]._ignore =true;
+                    }
+                    var thisDevice = await this.api.getDeviceInfo(devices[i].id).catch((e)=>{ log.warn(`ioriver-telldus: failed getDeviceInfo(${devices[i].id})`); });
+                    if(typeof thisDevice === undefined) {
+                        this.log.warn(`ioriver-telldus: Undefined sensor info id ${devices[i].id}!`);
+                    } else {
+                        this.log.debug(thisDevice);
+                        devices[i].info = thisDevice;
 
-            if(!devices[i]._ignore) {
-                this.log.debug(`Creating device object for ${thisDevice.name} ${thisDevice.id + this.baseSn}.`);
-                var item = await this.makeDevice(devices[i]);
-                this._api.emit('registerDevice',item);
+                        if(!devices[i]._ignore) {
+                            this.log.debug(`Creating device object for ${thisDevice.name} ${thisDevice.id + this.baseSn}.`);
+                            var item = await this.makeDevice(devices[i]);
+                            this._api.emit('registerDevice',item);
+                        }
+                    }
+                }
             }
-            
         }
 
 
@@ -190,7 +224,8 @@ class IORiverTelldus {
 
     async makeDevice(data) {
         var proto = {};
-        proto.type = "device";
+        proto.type = "device"; //depriciated
+        proto.isDevice = true;
         proto.Sn = this.baseSn + data.id;
         proto.name = data.name;
 
@@ -229,7 +264,8 @@ class IORiverTelldus {
         this.log.debug(`makeSensor(data)=`);
         this.log.debug(data);
         var proto = {};
-        proto.type = "sensor";
+        proto.type = "sensor"; //depriciated
+        proto.isSensor=true;
         proto.Sn = this.baseSn + data.id;
         proto.name = data.name;
 
@@ -242,9 +278,20 @@ class IORiverTelldus {
         for(var i = 0; i < d.length; i++) {
             if(d[i].name) {
                 let thisData = {};
+                if(d[i].name==="watt" && typeof d[i].scale !== undefined) {
+                    this.log.debug(`watt scale=${d[i].scale} and value=${d[i].value}`);
+                    if(d[i].scale===0) {
+                        d[i].name = "energy";    
+                    } else if(d[i].scale===2) {
+                        d[i].name = "power";    
+                    } else if(d[i].scale===4) {
+                        d[i].name = "voltage";    
+                    } else if(d[i].scale===5) {
+                        d[i].name = "current";    
+                    } 
+                } 
                 thisData.name = d[i].name;
                 thisData.value = d[i].value;
-                
                 //todo: override unit with platform config
                 if(this.nameUnit[d[i].name]) {
                     thisData.unit = this.nameUnit[d[i].name];
@@ -263,18 +310,20 @@ class IORiverTelldus {
         return serial-baseSn;
     }
 
+
+    // Public mandatory methods 
     async setDim(serial,value) {
         var byte = Math.round(value/100*255)
         if(value > 255) value = 255;
         if(value < 0) value=0;
         this.log.debug(`Telldus: set dimmer to ${byte}`);
-        await this.api.dimDevice(this.serial2Id(serial),byte);
+        await this.api.dimDevice(this.serial2Id(serial),byte).catch((e)=>{ });
     }
 
     async setOnOff(serial, value) {
         var on = false;
         if(value===1) on = true;
-        await this.api.onOffDevice(this.serial2Id(serial),on);
+        await this.api.onOffDevice(this.serial2Id(serial),on).catch((e)=>{ });
     }
 }
 
