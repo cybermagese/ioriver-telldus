@@ -1,6 +1,6 @@
 {
   "name": "ioriver-telldus",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Ioriver plugin for Telldus Local API ",
   "main": "index.js",
   "scripts": {
