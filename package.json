@@ -1,30 +1,29 @@
 {
-  "name": "ioriver-telldus",
-  "version": "0.3.1",
-  "description": "Ioriver plugin for Telldus Local API ",
-  "main": "index.js",
+  "name": "ioriver",
+  "version": "0.4.2",
+  "description": "Home automation bridge mainly for IMSE Ultra PLC/BAC",
+  "main": "lib/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cybermagese/ioriver-telldus.git"
-  },
-  "engines": {
-    "ioriver": ">=0.4.0",
-    "node": ">=8" 
+    "url": "git+https://github.com/cybermagese/ioriver.git"
   },
   "keywords": [
-    "ioriver","telldus","iot"
+    "imse-ultra","ioriver","iot","telldus"
   ],
-  "author": "Ove Jansson <ove@cybermage.se>",
+  "author": "Ove Jansson",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/cybermagese/ioriver-telldus/issues"
+    "url": "https://github.com/cybermagese/ioriver/issues"
   },
-  "homepage": "https://github.com/cybermagese/ioriver-telldus#readme",
+  "homepage": "https://github.com/cybermagese/ioriver#readme",
   "dependencies": {
-    "ioriver": "^0.4.0",
-    "telldus-api": "^1.0.1" 
+    "commander": "^2.19.0",
+    "imse-ultra-api": "^0.2.2",
+    "util": "^0.11.1",
+    "winston": "^3.1.0",
+    "semver":"^5.6.0"
   }
 }
