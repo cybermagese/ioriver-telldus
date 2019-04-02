@@ -153,6 +153,8 @@ class IORiverTelldus {
                 await this._api.sleep(5000);
             }
             
+        } else {
+            await this._api.sleep(500);
         }
         if(typeof sensors === 'undefined') {
             this.log.warn(`ioriver-telldus: Undefined sensor list!`);
@@ -172,7 +174,7 @@ class IORiverTelldus {
                     if(!sensors[i].name) {
                         sensors[i]._ignore = true;
                     }
-                    await this._api.sleep(300);
+                    await this._api.sleep(500);
                     var thisSensor = await this.api.getSensorInfo(sensors[i].id).catch((e)=>{ log.warn(`ioriver-telldus: failed getSensorInfo(${sensors[i2].id})`);});
                     if(typeof thisSensor === 'undefined') {
                         this.log.warn(`ioriver-telldus: Undefined sensor info id ${sensors[i].id}!`);
@@ -187,6 +189,7 @@ class IORiverTelldus {
                             this.log.debug(`Ignoring sensor id = ${sensors[i].id}`);
                         }
                     }
+                    await this._api.sleep(500);
                 }
             
             }
@@ -201,8 +204,10 @@ class IORiverTelldus {
             if(requestTime>10000) {
                 await this._api.sleep(60000);
             }else{
-                await this._api.sleep(5000);
+                await this._api.sleep(30000);
             }
+        } else {
+            await this._api.sleep(500);
         }
         if(typeof devices==='undefined') {
             this.log.warn(`ioriver-telldus: undefined device`);
@@ -222,7 +227,7 @@ class IORiverTelldus {
                     if(!devices[i].name) { //remove ignored devices
                         devices[i]._ignore =true;
                     }
-                    await this._api.sleep(300);
+                    await this._api.sleep(500);
                     var thisDevice = await this.api.getDeviceInfo(devices[i].id).catch((e)=>{ log.warn(`ioriver-telldus: failed getDeviceInfo(${devices[i3].id})`); });
                     if(typeof thisDevice === 'undefined') {
                         this.log.warn(`ioriver-telldus: Undefined sensor info id ${devices[i].id}!`);
@@ -236,6 +241,7 @@ class IORiverTelldus {
                             this._api.emit('registerDevice',item2);
                         }
                     }
+                    await this._api.sleep(500);
                 }
             }
         }
