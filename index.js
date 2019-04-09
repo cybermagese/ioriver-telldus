@@ -70,6 +70,12 @@ class IORiverTelldus {
             "current": "A",
             "voltage": "V"
         };
+
+        this.battery = {
+            "OK": 253,
+            "STATUS_UNKNOWN": 254,
+            "LOW":255
+        };
     }
 
     //REQUIRED EXTERNAL AND API METHODS
@@ -260,7 +266,15 @@ class IORiverTelldus {
         proto.name = data.name;
 
         if(data.battery) {
-            proto.battery = data.battery/2.55; //convert to %
+            if(data.battery>=0 && data.battery<=100) {
+                proto.battery = data.battery;
+            } else if (data.battery === this.battery.OK) {
+                proto.battery = -1;
+            } else if (data.battery === this.battery.STATUS_UNKNOWN) {
+                proto.battery = -2;
+            } else if (data.battery === this.battery.LOW) {
+                proto.battery = -3;
+            }
         }
 
         proto.methods = {
@@ -300,7 +314,15 @@ class IORiverTelldus {
         proto.name = data.name;
 
         if(data.battery) {
-            proto.battery = data.battery/2.55; //convert to %
+            if(data.battery>=0 && data.battery<=100) {
+                proto.battery = data.battery;
+            } else if (data.battery === this.battery.OK) {
+                proto.battery = -1;
+            } else if (data.battery === this.battery.STATUS_UNKNOWN) {
+                proto.battery = -2;
+            } else if (data.battery === this.battery.LOW) {
+                proto.battery = -3;
+            }
         }
 
         proto.inputs = [];
