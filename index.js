@@ -112,7 +112,7 @@ class IORiverTelldus {
         
         this.system = await this.api.request({ path: '/system/info' })
         .catch((e)=>{
-            log.warn(`ioriver-telldus: Failed to contact controller`);
+            this.log.warn(`ioriver-telldus: Failed to contact controller`);
         });
         this.log.debug('System/Info = ');
         this.log.debug(this.system);
@@ -262,7 +262,7 @@ class IORiverTelldus {
         var proto = {};
         proto.type = "device"; //depriciated
         proto.isDevice = true;
-        proto.Sn = this.baseSn + data.id;
+        proto.Sn = Number(this.baseSn) + Number(data.id);
         proto.name = data.name;
 
         if(data.battery) {
@@ -310,7 +310,7 @@ class IORiverTelldus {
         var proto = {};
         proto.type = "sensor"; //depriciated
         proto.isSensor=true;
-        proto.Sn = this.baseSn + data.id;
+        proto.Sn = Number(this.baseSn) + Number(data.id);
         proto.name = data.name;
 
         if(data.battery) {

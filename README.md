@@ -29,6 +29,10 @@ See <https://github.com/mifi/telldus-local-auth> on how to obtain a security tok
 
 ## Version history
 
+### 0.3.6
+
+* Minor enhencment for future api:s
+
 ### 0.3.5
 
 * Fix battery status, 0-100 is percent, -1 is OK, -2 is unknown status (most of telldus sensors), -3 is low level
